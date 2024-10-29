@@ -39,7 +39,7 @@ def calc_orientation(org: pg.Rect, dst: pg.Rect) -> tuple[float, float]:
 
 class Bird(pg.sprite.Sprite):
     """
-    ゲームキャラクター（こうかとん）に関するクラス
+    ゲームキャラクター（こうかとん1p）に関するクラス
     """
     delta = {  # 押下キーと移動量の辞書
         pg.K_UP: (0, -1),
@@ -55,6 +55,74 @@ class Bird(pg.sprite.Sprite):
         引数2 xy：こうかとん画像の位置座標タプル
         """
         super().__init__()
+        img0 = pg.transform.rotozoom(pg.image.load(f"fig/{num}.png"), 0, 2.0)
+        self.img = pg.transform.flip(img0, True, False)  # デフォルトのこうかとん
+        # self.imgs = {
+        #     (-1, 0): img,
+        #     (+1, 0): img,  # 右
+        #     (+1, -1): pg.transform.rotozoom(img, 45, 1.0),  # 右上
+        #     (-1, -1): pg.transform.rotozoom(img, 90, 1.0),  # 上
+        #     (-2, -1): pg.transform.rotozoom(img0, -45, 1.0),  # 左上
+        #     (-2, 0): img0,  # 左
+        #     (-2, +1): pg.transform.rotozoom(img0, 45, 1.0),  # 左下
+        #     (-1, +1): pg.transform.rotozoom(img, -90, 1.0),  # 下
+        #     (+1, +1): pg.transform.rotozoom(img, -45, 1.0),  # 右下
+        # }
+        self.dire = (1, 0)
+        self.image = self.img
+        self.rect = self.image.get_rect()
+        self.rect.center = xy
+        self.speed = 10
+
+    def change_img(self, num: int, screen: pg.Surface):
+        """
+        こうかとん画像を切り替え，画面に転送する
+        引数1 num：こうかとん画像ファイル名の番号
+        引数2 screen：画面Surface
+        """
+        #pg.transform.rotozoom(pg.image.load(f"fig/{num}.png"), 0, 2.0)
+        screen.blit(self.image, self.rect)
+
+    def update(self, key_lst: list[bool], screen: pg.Surface):
+        """
+        押下キーに応じてこうかとんを移動させる
+        引数1 key_lst：押下キーの真理値リスト
+        引数2 screen：画面Surface
+        """
+        sum_mv = [0, 0]
+        for k, mv in __class__.delta.items():
+            if key_lst[k]:
+                sum_mv[0] += mv[0]
+                sum_mv[1] += mv[1]
+        self.rect.move_ip(self.speed*sum_mv[0], self.speed*sum_mv[1])
+        if check_bound(self.rect) == (False, True):
+            self.rect.move_ip(-self.speed*sum_mv[0], 0)
+        if check_bound(self.rect) == (True, False):
+            self.rect.move_ip(0, -self.speed*sum_mv[1])
+        if check_bound(self.rect) == (False, False):
+            self.rect.move_ip(-self.speed*sum_mv[0], -self.speed*sum_mv[1])
+        if not (sum_mv[0] == 0 and sum_mv[1] == 0):
+            self.dire = tuple(sum_mv)
+            self.image = self.img
+        screen.blit(self.image, self.rect)
+
+class Bird_2p(pg.sprite.Sprite):
+    """
+    ゲームキャラクター（こうかとん2p）に関するクラス
+    """
+    delta = {  # 押下キーと移動量の辞書
+        pg.K_w: (0, -1),
+        pg.K_s: (0, +1),
+        pg.K_a: (-1, 0),
+        pg.K_d: (+1, 0),
+    }
+
+    def __init__(self, num: int, xy: tuple[int, int]):
+        """
+        こうかとん画像Surfaceを生成する
+        引数1 num：こうかとん画像ファイル名の番号
+        引数2 xy：こうかとん画像の位置座標タプル
+        """
         img0 = pg.transform.rotozoom(pg.image.load(f"fig/{num}.png"), 0, 2.0)
         self.img = pg.transform.flip(img0, True, False)  # デフォルトのこうかとん
         # self.imgs = {
@@ -246,7 +314,24 @@ class Score:
         self.image = self.font.render(f"Score: {self.value}", 0, self.color)
         screen.blit(self.image, self.rect)
 
-
+def game_over(screen): #ゲームオーバー時の画面
+    bo =pg.Surface((WIDTH, HEIGHT))
+    pg.draw.rect(bo, (0,0,0), pg.Rect(0,0,WIDTH,HEIGHT))
+    bo.set_alpha(155)
+    kk_img = pg.transform.rotozoom(pg.image.load("fig/8.png"), 0, 0.9)
+    kk_rct = kk_img.get_rect()
+    kk_rct.center = 350, 350
+    kk2_img = pg.transform.rotozoom(pg.image.load("fig/8.png"), 0, 0.9)
+    kk2_rct = kk2_img.get_rect()
+    kk2_rct.center = 780, 350
+    fonto = pg.font.Font(None, 80)
+    txt = fonto.render("GAME OVER", True, (255, 255, 255))
+    screen.blit(bo, [0, 0])
+    screen.blit(txt, [400, HEIGHT/2])
+    screen.blit(kk_img,kk_rct)
+    screen.blit(kk2_img,kk2_rct)
+    pg.display.update()
+    time.sleep(5)
 
 
 def main():
@@ -259,27 +344,22 @@ def main():
     bg_tmr=0
     score = Score()
     num = 5
-    bird = Bird(3, (900, 400))
+    bird = Bird(3, (300, 200))
+    bird_2p = Bird_2p(10, (300, 400))
     bombs = pg.sprite.Group()
     beams = pg.sprite.Group()
     exps = pg.sprite.Group()
     emys = pg.sprite.Group()
-
-    gravity = pg.sprite.Group()
-
-
     clock = pg.time.Clock()
+
+
+
     while True:
 
         key_lst = pg.key.get_pressed()
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 return 0
-            # if key_lst[pg.K_LSHIFT]: #シフトを押しながら
-            #     if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
-            #         beams.add(neobeam.gen_beams(bird,num))     #ビームを複数発射
-            # elif event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
-            #     beams.add(Beam(bird))
             
 
         x = -(bg_tmr%3200)
@@ -287,7 +367,6 @@ def main():
         screen.blit(pg.transform.flip(bg_img,True,False), [x+1600, 0])
         screen.blit(bg_img, [x+3200, 0])
         screen.blit(pg.transform.flip(bg_img,True,False), [x+4800, 0])
-        #screen.blit(bg_img, [0, 0])
 
         if tmr%200 == 0:  # 200フレームに1回，敵機を出現させる
             emys.add(Enemy())
@@ -307,24 +386,21 @@ def main():
             exps.add(Explosion(bomb, 50))  # 爆発エフェクト
             score.value += 1  # 1点アップ
 
-        for bomb in pg.sprite.groupcollide(bombs, gravity, True, False).keys():
-            exps.add(Explosion(bomb, 50))  # 爆発エフェクト
-            score.value += 1  # 1点アップ
-
-        for emy in pg.sprite.groupcollide(emys, gravity, True, False).keys():
-            exps.add(Explosion(emy, 100))  # 爆発エフェクト
-            score.value += 10  # 10点アップ
-            bird.change_img(6, screen)  # こうかとん喜びエフェクト
-
-        if len(pg.sprite.spritecollide(bird, bombs, True)) != 0:
-            bird.change_img(8, screen) # こうかとん悲しみエフェクト
-            score.update(screen)
-            pg.display.update()
-            time.sleep(2)
+        if len(pg.sprite.spritecollide(bird, emys, True)) != 0:
+            game_over(screen)
             return
+        
+        if len(pg.sprite.spritecollide(bird_2p, emys, True)) != 0:
+            game_over(screen)
+            return
+        
         if tmr%50==0:
             beams.add(Beam(bird))
+        if tmr%50==0:
+            beams.add(Beam(bird_2p))
+
         bird.update(key_lst, screen)
+        bird_2p.update(key_lst, screen)
         beams.update()
         beams.draw(screen)
         emys.update()
