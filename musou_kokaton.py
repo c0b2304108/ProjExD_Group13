@@ -249,6 +249,30 @@ class Score:
 
 
 
+class Item(pg.sprite.Sprite):
+    """
+    アイテムに関するクラス
+    """
+    def __init__(self, position: tuple[int, int]):
+        """
+        アイテムの初期設定
+        引数1 position：アイテムが出現する座標
+        """
+        super().__init__()
+        self.image = pg.transform.rotozoom(pg.image.load("fig/sp.png"), 0, 0.5)
+        self.rect = self.image.get_rect(center=position)
+        self.spawn_time = pg.time.get_ticks()  # 出現した時刻を記録
+
+    def update(self):
+        """
+        アイテムが10秒経過したら消える
+        """
+        if pg.time.get_ticks() - self.spawn_time > 10000:  # 10秒経過で消える
+            self.kill()
+
+
+
+
 def main():
 
     pg.display.set_caption("真！こうかとん無双")
@@ -265,7 +289,8 @@ def main():
     exps = pg.sprite.Group()
     emys = pg.sprite.Group()
 
-    gravity = pg.sprite.Group()
+    items = pg.sprite.Group()  # アイテム用のグループ
+    enemy_count = 0  # 敵を倒した数をカウント
 
 
     clock = pg.time.Clock()
@@ -301,22 +326,30 @@ def main():
             exps.add(Explosion(emy, 100))  # 爆発エフェクト
             score.value += 10  # 10点アップ
             bird.change_img(6, screen)  # こうかとん喜びエフェクト
+            enemy_count += 1  # 敵を倒した数を増やす
+
+            # 5体倒すごとにアイテムをドロップ
+            if enemy_count % 5 == 0:
+                items.add(Item(emy.rect.center))
 
         #[Bomb(emy, bird),Bomb(emy, bird),Bomb(emy, bird)......]
         for bomb in pg.sprite.groupcollide(bombs, beams, True, True).keys():
             exps.add(Explosion(bomb, 50))  # 爆発エフェクト
             score.value += 1  # 1点アップ
 
-        for bomb in pg.sprite.groupcollide(bombs, gravity, True, False).keys():
-            exps.add(Explosion(bomb, 50))  # 爆発エフェクト
-            score.value += 1  # 1点アップ
+        if pg.sprite.spritecollide(bird, items, True):
+            bird.speed += 5  # スピードアップ効果
 
-        for emy in pg.sprite.groupcollide(emys, gravity, True, False).keys():
-            exps.add(Explosion(emy, 100))  # 爆発エフェクト
-            score.value += 10  # 10点アップ
-            bird.change_img(6, screen)  # こうかとん喜びエフェクト
+        # for bomb in pg.sprite.groupcollide(bombs, gravity, True, False).keys():
+        #     exps.add(Explosion(bomb, 50))  # 爆発エフェクト
+        #     score.value += 1  # 1点アップ
 
-        if len(pg.sprite.spritecollide(bird, bombs, True)) != 0:
+        # for emy in pg.sprite.groupcollide(emys, gravity, True, False).keys():
+        #     exps.add(Explosion(emy, 100))  # 爆発エフェクト
+        #     score.value += 10  # 10点アップ
+        #     bird.change_img(6, screen)  # こうかとん喜びエフェクト
+
+        if len(pg.sprite.spritecollide(bird, emys, True)) != 0:
             bird.change_img(8, screen) # こうかとん悲しみエフェクト
             score.update(screen)
             pg.display.update()
@@ -333,6 +366,8 @@ def main():
         bombs.draw(screen)
         exps.update()
         exps.draw(screen)
+        items.update()  # アイテムの更新（時間経過チェック）
+        items.draw(screen)  # アイテムの描画
         score.update(screen)
         
         pg.display.update()
