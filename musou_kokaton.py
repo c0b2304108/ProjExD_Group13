@@ -80,7 +80,7 @@ class Bird(pg.sprite.Sprite):
     def draw_charge_effect(self, screen: pg.Surface):
         if self.is_charging:
             radius = min(50, self.charge_time)  # チャージ時間に応じた半径
-            pg.draw.circle(screen, (255, 0, 0), self.rect.center, radius, 2)  # チャージエフェクト
+            pg.draw.circle(screen, (255, 0, 255), self.rect.center, radius, 2)  # チャージエフェクト
 
 
     def change_img(self, num: int, screen: pg.Surface):
@@ -167,9 +167,7 @@ class Beam(pg.sprite.Sprite):
         self.image = pg.transform.rotozoom(pg.image.load(f"fig/beam.png"), angle, 2.0)
         self.vx = math.cos(math.radians(angle))
         self.vy = -math.sin(math.radians(angle))
-        self.rect = self.image.get_rect()
-        self.rect.centery = bird.rect.centery+bird.rect.height*self.vy
-        self.rect.centerx = bird.rect.centerx+bird.rect.width*self.vx
+        #self.rect = self.image.get_rect()
         self.speed = 10 if not is_charge_shot else 20 #通常ショットとチャージショットとの速さの違い
         self.damage = 1 if not is_charge_shot else 5  # チャージショットのダメージ
         self.rect = self.image.get_rect()
@@ -260,8 +258,6 @@ class Score:
         screen.blit(self.image, self.rect)
 
 
-
-
 def main():
 
     pg.display.set_caption("真！こうかとん無双")
@@ -291,19 +287,17 @@ def main():
             if event.type == pg.KEYUP and event.key == pg.K_SPACE:
                 if bird.stop_charging():  # チャージが一定時間以上ならチャージショット発射
                     beams.add(Beam(bird, is_charge_shot=True))
-                #else:
-                #    beams.add(Beam(bird))  # 通常ショット発射
-        
         if bird.is_charging:
             bird.charge_time += 1
-            
+        else:
+            if tmr%50==0:
+                beams.add(Beam(bird))
 
         x = -(bg_tmr%3200)
         screen.blit(bg_img, [x, 0])
         screen.blit(pg.transform.flip(bg_img,True,False), [x+1600, 0])
         screen.blit(bg_img, [x+3200, 0])
         screen.blit(pg.transform.flip(bg_img,True,False), [x+4800, 0])
-        #screen.blit(bg_img, [0, 0])
 
         if tmr%200 == 0:  # 200フレームに1回，敵機を出現させる
             emys.add(Enemy())
@@ -338,8 +332,7 @@ def main():
             pg.display.update()
             time.sleep(2)
             return
-        if tmr%50==0:
-            beams.add(Beam(bird))
+        
         
         bird.update(key_lst, screen)
         beams.update()
