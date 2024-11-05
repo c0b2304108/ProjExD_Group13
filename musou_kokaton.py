@@ -181,7 +181,7 @@ class Bomb(pg.sprite.Sprite):
     """
     colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 0), (255, 0, 255), (0, 255, 255)]
 
-    def __init__(self, emy: "Enemy", bird: Bird):
+    def __init__(self, emy: "Enemy", bird: "Bird"):
         """
         爆弾円Surfaceを生成する
         引数1 emy：爆弾を投下する敵機
@@ -246,7 +246,7 @@ class Explosion(pg.sprite.Sprite):
     """
     爆発に関するクラス
     """
-    def __init__(self, obj: "Bomb|Enemy", life: int):
+    def __init__(self, obj: "Bomb|Enemy|Boss", life: int):
         """
         爆弾が爆発するエフェクトを生成する
         引数1 obj：爆発するBombまたは敵機インスタンス
@@ -342,6 +342,55 @@ class Super_Enemy(pg.sprite.Sprite):
             self.kill()
             
 
+class Boss(pg.sprite.Sprite):
+    """
+    ボスに関するクラス
+    """
+    
+
+    def __init__(self, beams_group):
+        super().__init__()
+        self.beams_group = beams_group
+        img = pg.image.load(f"fig/boss.png")
+        self.img = pg.transform.flip(img, False, False)
+        self.image = self.img
+        self.rect = self.image.get_rect()
+        self.rect.center =WIDTH, HEIGHT/2
+        self.vx, self.vy = -3, 0
+        self.bound = WIDTH - 300
+        self.state = "moving"
+        self.beam_interval = 100
+        self.last_shot_time = 0
+        self.health = 20
+
+    def update(self, tmr):
+        if self.state == "moving":
+            self.rect.move_ip(self.vx, self.vy)
+            if self.rect.centerx <= self.bound:
+                self.vx = 0
+                self.state = "stopped"
+
+        if self.state == "stopped":
+            if tmr - self.last_shot_time >= self.beam_interval:
+                self.beams_group.add(BossBeam(self))
+                self.last_shot_time = tmr
+
+
+class BossBeam(pg.sprite.Sprite):
+    def __init__(self, boss: Boss):
+        super().__init__()
+        self.image = pg.transform.rotozoom(pg.image.load(f"fig/boss_beam.png"), 0, 1.0)
+        self.rect = self.image.get_rect()
+        self.rect.centerx = boss.rect.centerx
+        self.rect.centery = boss.rect.centery
+        self.vx = -6
+
+    def update(self):
+        self.rect.move_ip(self.vx, 0)
+        if check_bound(self.rect) != (True, True):
+            self.kill()
+
+
 class Score:
     """
     打ち落とした爆弾，敵機の数をスコアとして表示するクラス
@@ -396,6 +445,8 @@ def main():
     beams = pg.sprite.Group()
     exps = pg.sprite.Group()
     emys = pg.sprite.Group()
+    boss = pg.sprite.Group()
+    boss_beams = pg.sprite.Group()
     b_emys = pg.sprite.Group()
     sp_emys = pg.sprite.Group()
 
@@ -422,6 +473,9 @@ def main():
 
         if tmr%200 == 0:  # 200フレームに1回，敵機を出現させる
             emys.add(Enemy())
+
+        if tmr/600 == 1:
+            boss.add(Boss(boss_beams))
 
         if tmr%200 == 0:
             sp_emys.add(Super_Enemy(2))
@@ -463,8 +517,34 @@ def main():
         if len(pg.sprite.spritecollide(bird_2p, emys, True)) != 0:
             game_over(screen)
             return
-        if len(pg.sprite.spritecollide(bird, bombs, True)) != 0:
+        for boss_hit in pg.sprite.groupcollide(boss, beams, False, True).keys():
+            for beam in beams:
+                if beam.rect.colliderect(boss_hit.rect):
+                    exps.add(Explosion(beam, 100))
+                    beam.kill()
+            boss_hit.health -= 1
+            if boss_hit.health <= 0:
+                exps.add(Explosion(boss_hit, 100))
+                score.value += 100
+                boss_hit.kill()
+                bird.change_img(6, screen)
+
+                font = pg.font.Font(None, 80)
+                clear_text = font.render("GAME CLEAR!", True, (0, 255, 0))
+                text_rect = clear_text.get_rect(center = (WIDTH // 2, HEIGHT // 2))
+                screen.blit(clear_text, text_rect)
+                pg.display.update()
+                time.sleep(3)
+                return
+
+        if len(pg.sprite.spritecollide(bird, emys, True)) != 0:
             game_over(screen)
+            return
+        if pg.sprite.spritecollide(bird, boss_beams, True):
+            bird.change_img(8, screen)
+            score.update(screen)
+            pg.display.update()
+            time.sleep(2)
             return
         if tmr%50==0:
             beams.add(Beam(bird))
@@ -485,6 +565,10 @@ def main():
         bombs.draw(screen)
         exps.update()
         exps.draw(screen)
+        boss.update(tmr)
+        boss_beams.update()
+        boss_beams.draw(screen)
+        boss.draw(screen)
         score.update(screen)
         
         pg.display.update()
