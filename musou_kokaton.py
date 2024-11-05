@@ -130,7 +130,7 @@ class Bomb(pg.sprite.Sprite):
         self.vx, self.vy = calc_orientation(emy.rect, bird.rect)  
         self.rect.centerx = emy.rect.centerx
         self.rect.centery = emy.rect.centery+emy.rect.height//2
-        self.speed = 6
+        self.speed = 10
 
     def update(self):
         """
@@ -221,6 +221,25 @@ class Enemy(pg.sprite.Sprite):
     def update(self):
         self.rect.move_ip(self.vx, self.vy)
 
+class Bomb_Enemy(pg.sprite.Sprite):
+    """
+    敵機に関するクラス
+    """
+    imgs = [pg.image.load(f"fig/alien{i}.png") for i in range(1, 4)]
+    
+    def __init__(self):
+        super().__init__()
+        self.image = random.choice(__class__.imgs)
+        self.rect = self.image.get_rect()
+        self.rect.center =WIDTH-10, random.randint(100, HEIGHT-100)
+        self.vx, self.vy = 0, 0
+        self.state = "start"  # 降下状態or停止状態
+        self.interval = 5  # 爆弾投下インターバル
+
+    def update(self):
+        self.rect.move_ip(self.vx, self.vy)
+        self.state="stop"
+        
 class Super_Enemy(pg.sprite.Sprite):
     """
     敵機に関するクラス
@@ -291,6 +310,7 @@ def main():
     beams = pg.sprite.Group()
     exps = pg.sprite.Group()
     emys = pg.sprite.Group()
+    b_emys = pg.sprite.Group()
     sp_emys = pg.sprite.Group()
 
     
@@ -320,19 +340,28 @@ def main():
         if tmr%200 == 0:  # 200フレームに1回，敵機を出現させる
             emys.add(Enemy())
 
-        if tmr%400 == 0:
+        if tmr%200 == 0:
             sp_emys.add(Super_Enemy(2))
 
-        for emy in emys:
-            if emy.state == "stop" and tmr%emy.interval == 0:
+        if tmr%300 == 0:
+            b_emys.add(Bomb_Enemy())
+
+        for b_emy in b_emys:
+            if b_emy.state == "stop" and tmr%b_emy.interval == 0:
                 # 敵機が停止状態に入ったら，intervalに応じて爆弾投下
-                bombs.add(Bomb(emy, bird))
+                bombs.add(Bomb(b_emy, bird))
 
         for emy in pg.sprite.groupcollide(emys, beams, True, True).keys():
             exps.add(Explosion(emy, 100))  # 爆発エフェクト
             score.value += 10  # 10点アップ
             bird.change_img(6, screen)  # こうかとん喜びエフェクト
 
+        for b_emy in pg.sprite.groupcollide(b_emys, beams, True, True).keys():
+            exps.add(Explosion(b_emy, 100))  # 爆発エフェクト
+            score.value += 10  # 10点アップ
+            bird.change_img(6, screen)  # こうかとん喜びエフェクト
+        
+        
         for sp_emy in pg.sprite.groupcollide(sp_emys, beams , False, True).keys():
             sp_emy.damage()
             if sp_emy.lifestate == "dead":
@@ -353,6 +382,14 @@ def main():
             pg.display.update()
             time.sleep(2)
             return
+        
+        if len(pg.sprite.spritecollide(bird, bombs, True)) != 0:
+            bird.change_img(8, screen) # こうかとん悲しみエフェクト
+            score.update(screen)
+            pg.display.update()
+            time.sleep(2)
+            return
+
         if tmr%50==0:
             beams.add(Beam(bird))
         bird.update(key_lst, screen)
@@ -360,6 +397,8 @@ def main():
         beams.draw(screen)
         emys.update()
         emys.draw(screen)
+        b_emys.update()
+        b_emys.draw(screen)
         sp_emys.update()
         sp_emys.draw(screen)
         bombs.update()
