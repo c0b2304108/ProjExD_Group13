@@ -59,7 +59,7 @@ class Bird(pg.sprite.Sprite):
         self.img = pg.transform.flip(img0, True, False)  # デフォルトのこうかとん
         self.charge_time = 0  # チャージ時間を管理する変数を追加
         self.is_charging = False  # チャージ状態かどうか
-
+        self.state="alive"
         
         self.dire = (1, 0)
         self.image = self.img
@@ -90,7 +90,8 @@ class Bird(pg.sprite.Sprite):
         引数2 screen：画面Surface
         """
         #pg.transform.rotozoom(pg.image.load(f"fig/{num}.png"), 0, 2.0)
-        screen.blit(self.image, self.rect)
+        if self.state=="alive":
+            screen.blit(self.image, self.rect)
 
     def update(self, key_lst: list[bool], screen: pg.Surface):
         """
@@ -98,23 +99,28 @@ class Bird(pg.sprite.Sprite):
         引数1 key_lst：押下キーの真理値リスト
         引数2 screen：画面Surface
         """
-        sum_mv = [0, 0]
-        for k, mv in __class__.delta.items():
-            if key_lst[k]:
-                sum_mv[0] += mv[0]
-                sum_mv[1] += mv[1]
-        self.rect.move_ip(self.speed*sum_mv[0], self.speed*sum_mv[1])
-        if check_bound(self.rect) == (False, True):
-            self.rect.move_ip(-self.speed*sum_mv[0], 0)
-        if check_bound(self.rect) == (True, False):
-            self.rect.move_ip(0, -self.speed*sum_mv[1])
-        if check_bound(self.rect) == (False, False):
-            self.rect.move_ip(-self.speed*sum_mv[0], -self.speed*sum_mv[1])
-        if not (sum_mv[0] == 0 and sum_mv[1] == 0):
-            self.dire = tuple(sum_mv)
-            self.image = self.img
-        screen.blit(self.image, self.rect)
-        self.draw_charge_effect(screen)
+        if self.state=="alive":
+            sum_mv = [0, 0]
+            for k, mv in __class__.delta.items():
+                if key_lst[k]:
+                    sum_mv[0] += mv[0]
+                    sum_mv[1] += mv[1]
+            self.rect.move_ip(self.speed*sum_mv[0], self.speed*sum_mv[1])
+            if check_bound(self.rect) == (False, True):
+                self.rect.move_ip(-self.speed*sum_mv[0], 0)
+            if check_bound(self.rect) == (True, False):
+                self.rect.move_ip(0, -self.speed*sum_mv[1])
+            if check_bound(self.rect) == (False, False):
+                self.rect.move_ip(-self.speed*sum_mv[0], -self.speed*sum_mv[1])
+            if not (sum_mv[0] == 0 and sum_mv[1] == 0):
+                self.dire = tuple(sum_mv)
+                self.image = self.img
+            screen.blit(self.image, self.rect)
+            self.draw_charge_effect(screen)
+
+    def dead(self):
+        self.state="dead"
+
 class Bird_2p(pg.sprite.Sprite):
     """
     ゲームキャラクター（こうかとん2p）に関するクラス
@@ -136,18 +142,7 @@ class Bird_2p(pg.sprite.Sprite):
         self.img = pg.transform.flip(img0, True, False)  # デフォルトのこうかとん
         self.charge_time = 0  # チャージ時間を管理する変数を追加
         self.is_charging = False  # チャージ状態かどうか
-
-        # self.imgs = {
-        #     (-1, 0): img,
-        #     (+1, 0): img,  # 右
-        #     (+1, -1): pg.transform.rotozoom(img, 45, 1.0),  # 右上
-        #     (-1, -1): pg.transform.rotozoom(img, 90, 1.0),  # 上
-        #     (-2, -1): pg.transform.rotozoom(img0, -45, 1.0),  # 左上
-        #     (-2, 0): img0,  # 左
-        #     (-2, +1): pg.transform.rotozoom(img0, 45, 1.0),  # 左下
-        #     (-1, +1): pg.transform.rotozoom(img, -90, 1.0),  # 下
-        #     (+1, +1): pg.transform.rotozoom(img, -45, 1.0),  # 右下
-        # }
+        self.state="alive"
         self.dire = (1, 0)
         self.image = self.img
         self.rect = self.image.get_rect()
@@ -177,7 +172,8 @@ class Bird_2p(pg.sprite.Sprite):
         引数2 screen：画面Surface
         """
         #pg.transform.rotozoom(pg.image.load(f"fig/{num}.png"), 0, 2.0)
-        screen.blit(self.image, self.rect)
+        if self.state=="alive":
+            screen.blit(self.image, self.rect)
 
     def update(self, key_lst: list[bool], screen: pg.Surface):
         """
@@ -185,23 +181,27 @@ class Bird_2p(pg.sprite.Sprite):
         引数1 key_lst：押下キーの真理値リスト
         引数2 screen：画面Surface
         """
-        sum_mv = [0, 0]
-        for k, mv in __class__.delta.items():
-            if key_lst[k]:
-                sum_mv[0] += mv[0]
-                sum_mv[1] += mv[1]
-        self.rect.move_ip(self.speed*sum_mv[0], self.speed*sum_mv[1])
-        if check_bound(self.rect) == (False, True):
-            self.rect.move_ip(-self.speed*sum_mv[0], 0)
-        if check_bound(self.rect) == (True, False):
-            self.rect.move_ip(0, -self.speed*sum_mv[1])
-        if check_bound(self.rect) == (False, False):
-            self.rect.move_ip(-self.speed*sum_mv[0], -self.speed*sum_mv[1])
-        if not (sum_mv[0] == 0 and sum_mv[1] == 0):
-            self.dire = tuple(sum_mv)
-            self.image = self.img
-        screen.blit(self.image, self.rect)
-        self.draw_charge_effect(screen)
+        if self.state=="alive":
+            sum_mv = [0, 0]
+            for k, mv in __class__.delta.items():
+                if key_lst[k]:
+                    sum_mv[0] += mv[0]
+                    sum_mv[1] += mv[1]
+            self.rect.move_ip(self.speed*sum_mv[0], self.speed*sum_mv[1])
+            if check_bound(self.rect) == (False, True):
+                self.rect.move_ip(-self.speed*sum_mv[0], 0)
+            if check_bound(self.rect) == (True, False):
+                self.rect.move_ip(0, -self.speed*sum_mv[1])
+            if check_bound(self.rect) == (False, False):
+                self.rect.move_ip(-self.speed*sum_mv[0], -self.speed*sum_mv[1])
+            if not (sum_mv[0] == 0 and sum_mv[1] == 0):
+                self.dire = tuple(sum_mv)
+                self.image = self.img
+            screen.blit(self.image, self.rect)
+            self.draw_charge_effect(screen)
+    
+    def dead(self):
+        self.state="dead"
 
 
 class Bomb(pg.sprite.Sprite):
@@ -353,15 +353,14 @@ class Super_Enemy(pg.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.lifestate="alive"
         self.hp = hp
-        self.rect.center =WIDTH, random.randint(100, HEIGHT-100)
-        self.vx, self.vy = -20, 0
+        self.rect.center =WIDTH, random.randint(50, HEIGHT-50)
+        self.vx, self.vy = -50, 0
         self.state = "stop"  # 降下状態or停止状態
-        self.interval = 50  # 爆弾投下インターバル
+        self.interval = 70  # 爆弾投下インターバル
         self.count = 0
 
     def update(self):
         self.count+=1
-        print(self.count)
         if self.count>=self.interval:
             self.rect.move_ip(self.vx, self.vy)
 
@@ -528,18 +527,19 @@ def main():
             if event.type == pg.KEYUP and event.key == pg.K_LSHIFT:
                 if bird_2p.stop_charging():  # チャージが一定時間以上ならチャージショット発射
                     beams.add(Beam(bird_2p, is_charge_shot=True))
-            
-        if bird.is_charging:
-            bird.charge_time += 1
-        else:
-            if tmr%50==0:
-                beams.add(Beam(bird))
+        if bird.state=="alive":
+            if bird.is_charging:
+                bird.charge_time += 1
+            else:
+                if tmr%50==0:
+                    beams.add(Beam(bird))
 
-        if bird_2p.is_charging:
-            bird_2p.charge_time += 1
-        else:
-            if tmr%50==0:
-                beams.add(Beam(bird_2p))
+        if bird_2p.state=="alive":
+            if bird_2p.is_charging:
+                bird_2p.charge_time += 1
+            else:
+                if tmr%50==0:
+                    beams.add(Beam(bird_2p))
 
 
         x = -(bg_tmr%3200)
@@ -548,22 +548,29 @@ def main():
         screen.blit(bg_img, [x+3200, 0])
         screen.blit(pg.transform.flip(bg_img,True,False), [x+4800, 0])
 
-        if tmr%200 == 0:  # 200フレームに1回，敵機を出現させる
-            emys.add(Enemy())
+        if 100<tmr :
+            if tmr%200 == 0:  # 200フレームに1回，敵機を出現させる
+                emys.add(Enemy())
 
-        if tmr/600 == 1:
+            if tmr%200 == 0:
+                sp_emys.add(Super_Enemy(3))
+
+            if tmr < 1700:
+                if tmr%300 == 0:
+                    b_emys.add(Bomb_Enemy())
+
+        if tmr/2000 == 1:
             boss.add(Boss(boss_beams))
 
-        if tmr%200 == 0:
-            sp_emys.add(Super_Enemy(2))
-
-        if tmr%300 == 0:
-            b_emys.add(Bomb_Enemy())
-
         for b_emy in b_emys:
+            target=random.choice([bird,bird_2p])
+            if bird.state=="dead":
+                target=bird_2p
+            if bird_2p.state=="dead":
+                target=bird
             if b_emy.state == "stop" and tmr%b_emy.interval == 0:
                 # 敵機が停止状態に入ったら，intervalに応じて爆弾投下
-                bombs.add(Bomb(b_emy, bird))
+                bombs.add(Bomb(b_emy, target))
 
         for emy in pg.sprite.groupcollide(emys, beams, True, True).keys():
             exps.add(Explosion(emy, 100))  # 爆発エフェクト
@@ -601,18 +608,21 @@ def main():
                 score.value += 50
 
         #[Bomb(emy, bird),Bomb(emy, bird),Bomb(emy, bird)......]
-        for bomb in pg.sprite.groupcollide(bombs, beams, True, True).keys():
-            exps.add(Explosion(bomb, 50))  # 爆発エフェクト
-            score.value += 1  # 1点アップ
+        
         if pg.sprite.spritecollide(bird, items, True):
             bird.speed += 5  # スピードアップ効果
-        if len(pg.sprite.spritecollide(bird, emys, True)) != 0 or len(pg.sprite.spritecollide(bird, sp_emys, True)) != 0 or len(pg.sprite.spritecollide(bird, b_emys, True)) != 0:
-            game_over(screen)
-            return
+        if pg.sprite.spritecollide(bird_2p, items, True):
+            bird_2p.speed += 5  # スピードアップ効果
+
+        if bird.state=="alive":
+            if len(pg.sprite.spritecollide(bird, emys, True)) != 0 or len(pg.sprite.spritecollide(bird, sp_emys, True)) != 0 or len(pg.sprite.spritecollide(bird, b_emys, True)) != 0:
+                bird.dead()
         
-        if len(pg.sprite.spritecollide(bird_2p, emys, True)) != 0:
-            game_over(screen)
-            return
+        if bird_2p.state=="alive":
+            if len(pg.sprite.spritecollide(bird_2p, emys, True)) != 0 or len(pg.sprite.spritecollide(bird_2p, sp_emys, True)) != 0 or len(pg.sprite.spritecollide(bird_2p, b_emys, True)) != 0:
+                bird_2p.dead()    
+        
+        
         for boss_hit in pg.sprite.groupcollide(boss, beams, False, True).keys():
             for beam in beams:
                 if beam.rect.colliderect(boss_hit.rect):
@@ -632,20 +642,30 @@ def main():
                 pg.display.update()
                 time.sleep(3)
                 return
-
-        if len(pg.sprite.spritecollide(bird, emys, True)) != 0:
+        if bird.state=="alive":
+            if len(pg.sprite.spritecollide(bird, bombs, True)) != 0:
+                bird.dead()
+        
+        if bird_2p.state=="alive":
+            if len(pg.sprite.spritecollide(bird_2p, bombs, True)) != 0:
+                bird_2p.dead()
+        
+        if bird.state=="alive":
+            if pg.sprite.spritecollide(bird, boss_beams, True):
+                bird.dead()
+            
+        if bird_2p.state=="alive":
+            if pg.sprite.spritecollide(bird_2p, boss_beams, True):
+                bird_2p.dead()
+            
+        
+        if bird.state=="dead" and bird_2p.state=="dead":
             game_over(screen)
             return
-        if pg.sprite.spritecollide(bird, boss_beams, True):
-            bird.change_img(8, screen)
-            score.update(screen)
-            pg.display.update()
-            time.sleep(2)
-            return
         
-        
-        
+
         bird.update(key_lst, screen)
+        
         bird_2p.update(key_lst, screen)
         beams.update()
         beams.draw(screen)
