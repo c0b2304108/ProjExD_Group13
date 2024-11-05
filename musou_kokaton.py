@@ -440,6 +440,30 @@ class Score:
         self.image = self.font.render(f"Score: {self.value}", 0, self.color)
         screen.blit(self.image, self.rect)
 
+
+
+
+class Item(pg.sprite.Sprite):
+    """
+    アイテムに関するクラス
+    """
+    def __init__(self, position: tuple[int, int]):
+        """
+        アイテムの初期設定
+        引数1 position：アイテムが出現する座標
+        """
+        super().__init__()
+        self.image = pg.transform.rotozoom(pg.image.load("fig/sp.png"), 0, 0.5)
+        self.rect = self.image.get_rect(center=position)
+        self.spawn_time = pg.time.get_ticks()  # 出現した時刻を記録
+
+    def update(self):
+        """
+        アイテムが10秒経過したら消える
+        """
+        if pg.time.get_ticks() - self.spawn_time > 10000:  # 10秒経過で消える
+            self.kill()
+
 def game_over(screen): #ゲームオーバー時の画面
     bo =pg.Surface((WIDTH, HEIGHT))
     pg.draw.rect(bo, (0,0,0), pg.Rect(0,0,WIDTH,HEIGHT))
@@ -479,6 +503,8 @@ def main():
     boss_beams = pg.sprite.Group()
     b_emys = pg.sprite.Group()
     sp_emys = pg.sprite.Group()
+    items = pg.sprite.Group()  # アイテム用のグループ
+    enemy_count = 0  # 敵を倒した数をカウント
 
         
     
@@ -543,6 +569,24 @@ def main():
             exps.add(Explosion(emy, 100))  # 爆発エフェクト
             score.value += 10  # 10点アップ
             bird.change_img(6, screen)  # こうかとん喜びエフェクト
+            enemy_count += 1  # 敵を倒した数を増やす
+
+
+            # 5体倒すごとにアイテムをドロップ
+            if enemy_count % 5 == 0:
+                items.add(Item(emy.rect.center))
+
+        for b_emy in pg.sprite.groupcollide(b_emys, beams, True, True).keys():
+            exps.add(Explosion(b_emy, 100))  # 爆発エフェクト
+            score.value += 10  # 10点アップ
+            bird.change_img(6, screen)  # こうかとん喜びエフェクト
+        
+        
+        for sp_emy in pg.sprite.groupcollide(sp_emys, beams , False, True).keys():
+            sp_emy.damage()
+            if sp_emy.lifestate == "dead":
+                exps.add(Explosion(sp_emy, 100))
+                score.value += 50
 
         for b_emy in pg.sprite.groupcollide(b_emys, beams, True, True).keys():
             exps.add(Explosion(b_emy, 100))  # 爆発エフェクト
@@ -560,7 +604,8 @@ def main():
         for bomb in pg.sprite.groupcollide(bombs, beams, True, True).keys():
             exps.add(Explosion(bomb, 50))  # 爆発エフェクト
             score.value += 1  # 1点アップ
-
+        if pg.sprite.spritecollide(bird, items, True):
+            bird.speed += 5  # スピードアップ効果
         if len(pg.sprite.spritecollide(bird, emys, True)) != 0 or len(pg.sprite.spritecollide(bird, sp_emys, True)) != 0 or len(pg.sprite.spritecollide(bird, b_emys, True)) != 0:
             game_over(screen)
             return
@@ -618,6 +663,8 @@ def main():
         boss_beams.update()
         boss_beams.draw(screen)
         boss.draw(screen)
+        items.update()  # アイテムの更新（時間経過チェック）
+        items.draw(screen)  # アイテムの描画
         score.update(screen)
         
         pg.display.update()
