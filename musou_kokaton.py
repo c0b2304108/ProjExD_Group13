@@ -57,22 +57,31 @@ class Bird(pg.sprite.Sprite):
         super().__init__()
         img0 = pg.transform.rotozoom(pg.image.load(f"fig/{num}.png"), 0, 2.0)
         self.img = pg.transform.flip(img0, True, False)  # デフォルトのこうかとん
-        # self.imgs = {
-        #     (-1, 0): img,
-        #     (+1, 0): img,  # 右
-        #     (+1, -1): pg.transform.rotozoom(img, 45, 1.0),  # 右上
-        #     (-1, -1): pg.transform.rotozoom(img, 90, 1.0),  # 上
-        #     (-2, -1): pg.transform.rotozoom(img0, -45, 1.0),  # 左上
-        #     (-2, 0): img0,  # 左
-        #     (-2, +1): pg.transform.rotozoom(img0, 45, 1.0),  # 左下
-        #     (-1, +1): pg.transform.rotozoom(img, -90, 1.0),  # 下
-        #     (+1, +1): pg.transform.rotozoom(img, -45, 1.0),  # 右下
-        # }
+        self.charge_time = 0  # チャージ時間を管理する変数を追加
+        self.is_charging = False  # チャージ状態かどうか
+
+        
         self.dire = (1, 0)
         self.image = self.img
         self.rect = self.image.get_rect()
         self.rect.center = xy
         self.speed = 10
+    
+    def start_charging(self):
+        self.is_charging = True
+        self.charge_time = 0  # チャージを開始するときにリセット
+
+    def stop_charging(self):
+        self.is_charging = False
+        if self.charge_time > 50:  # チャージ時間が一定以上ならチャージショット発射
+            return True  # チャージショット発射信号
+        return False
+    
+    def draw_charge_effect(self, screen: pg.Surface):
+        if self.is_charging:
+            radius = min(50, self.charge_time)  # チャージ時間に応じた半径
+            pg.draw.circle(screen, (255, 0, 255), self.rect.center, radius, 2)  # チャージエフェクト
+
 
     def change_img(self, num: int, screen: pg.Surface):
         """
@@ -105,6 +114,7 @@ class Bird(pg.sprite.Sprite):
             self.dire = tuple(sum_mv)
             self.image = self.img
         screen.blit(self.image, self.rect)
+<<<<<<< HEAD
 
 class Bird_2p(pg.sprite.Sprite):
     """
@@ -174,6 +184,9 @@ class Bird_2p(pg.sprite.Sprite):
             self.image = self.img
         screen.blit(self.image, self.rect)
 
+=======
+        self.draw_charge_effect(screen)
+>>>>>>> C0A23083/charge
 
 class Bomb(pg.sprite.Sprite):
     """
@@ -214,7 +227,7 @@ class Beam(pg.sprite.Sprite):
     """
     ビームに関するクラス
     """
-    def __init__(self, bird: Bird):
+    def __init__(self, bird: Bird, is_charge_shot = False):
         """
         ビーム画像Surfaceを生成する
         引数1 bird：ビームを放つこうかとん
@@ -226,10 +239,12 @@ class Beam(pg.sprite.Sprite):
         self.image = pg.transform.rotozoom(pg.image.load(f"fig/beam.png"), angle, 2.0)
         self.vx = math.cos(math.radians(angle))
         self.vy = -math.sin(math.radians(angle))
+        #self.rect = self.image.get_rect()
+        self.speed = 10 if not is_charge_shot else 20 #通常ショットとチャージショットとの速さの違い
+        self.damage = 1 if not is_charge_shot else 5  # チャージショットのダメージ
         self.rect = self.image.get_rect()
-        self.rect.centery = bird.rect.centery+bird.rect.height*self.vy
-        self.rect.centerx = bird.rect.centerx+bird.rect.width*self.vx
-        self.speed = 10
+        self.rect.centery = bird.rect.centery + bird.rect.height * self.vy 
+        self.rect.centerx = bird.rect.centerx + bird.rect.width * self.vx 
 
     def update(self):
         """
@@ -238,9 +253,9 @@ class Beam(pg.sprite.Sprite):
         """
         self.rect.move_ip(self.speed*self.vx, self.speed*self.vy)
         if check_bound(self.rect) != (True, True):
-            self.kill()
+            self.kill()        
 
-        
+
 
 class Explosion(pg.sprite.Sprite):
     """
@@ -409,6 +424,7 @@ class Score:
         self.image = self.font.render(f"Score: {self.value}", 0, self.color)
         screen.blit(self.image, self.rect)
 
+<<<<<<< HEAD
 def game_over(screen): #ゲームオーバー時の画面
     bo =pg.Surface((WIDTH, HEIGHT))
     pg.draw.rect(bo, (0,0,0), pg.Rect(0,0,WIDTH,HEIGHT))
@@ -428,6 +444,8 @@ def game_over(screen): #ゲームオーバー時の画面
     pg.display.update()
     time.sleep(5)
 
+=======
+>>>>>>> C0A23083/charge
 
 def main():
 
@@ -438,13 +456,18 @@ def main():
     tmr=0
     bg_tmr=0
     score = Score()
+<<<<<<< HEAD
     num = 5
     bird = Bird(3, (300, 200))
     bird_2p = Bird_2p(10, (300, 400))
+=======
+    bird = Bird(3, (900, 400))
+>>>>>>> C0A23083/charge
     bombs = pg.sprite.Group()
     beams = pg.sprite.Group()
     exps = pg.sprite.Group()
     emys = pg.sprite.Group()
+<<<<<<< HEAD
     boss = pg.sprite.Group()
     boss_beams = pg.sprite.Group()
     b_emys = pg.sprite.Group()
@@ -457,13 +480,32 @@ def main():
 
 
 
+=======
+    gravity = pg.sprite.Group()
+    
+    
+>>>>>>> C0A23083/charge
     while True:
+        #screen.blit(bg_img,[0,0])
 
         key_lst = pg.key.get_pressed()
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 return 0
+<<<<<<< HEAD
             
+=======
+            if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
+                bird.start_charging()  # スペースキーを押したらチャージ開始
+            if event.type == pg.KEYUP and event.key == pg.K_SPACE:
+                if bird.stop_charging():  # チャージが一定時間以上ならチャージショット発射
+                    beams.add(Beam(bird, is_charge_shot=True))
+        if bird.is_charging:
+            bird.charge_time += 1
+        else:
+            if tmr%50==0:
+                beams.add(Beam(bird))
+>>>>>>> C0A23083/charge
 
         x = -(bg_tmr%3200)
         screen.blit(bg_img, [x, 0])
@@ -538,19 +580,28 @@ def main():
                 return
 
         if len(pg.sprite.spritecollide(bird, emys, True)) != 0:
+<<<<<<< HEAD
             game_over(screen)
             return
         if pg.sprite.spritecollide(bird, boss_beams, True):
             bird.change_img(8, screen)
+=======
+            bird.change_img(8, screen) # こうかとん悲しみエフェクト
+>>>>>>> C0A23083/charge
             score.update(screen)
             pg.display.update()
             time.sleep(2)
             return
+<<<<<<< HEAD
         if tmr%50==0:
             beams.add(Beam(bird))
         if tmr%50==0:
             beams.add(Beam(bird_2p))
 
+=======
+        
+        
+>>>>>>> C0A23083/charge
         bird.update(key_lst, screen)
         bird_2p.update(key_lst, screen)
         beams.update()
