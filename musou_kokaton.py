@@ -317,10 +317,10 @@ def main():
         screen.blit(pg.transform.flip(bg_img,True,False), [x+4800, 0])
         #screen.blit(bg_img, [0, 0])
 
-        #if tmr%200 == 0:  # 200フレームに1回，敵機を出現させる
-         #   emys.add(Enemy())
+        if tmr%200 == 0:  # 200フレームに1回，敵機を出現させる
+            emys.add(Enemy())
 
-        if tmr%100 == 0:
+        if tmr%400 == 0:
             sp_emys.add(Super_Enemy(2))
 
         for emy in emys:
